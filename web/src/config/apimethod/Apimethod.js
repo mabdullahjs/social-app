@@ -1,4 +1,4 @@
-const baseurl = "https://localhost:5000/api/v1"
+const baseurl = "https://bewildered-toad-smock.cyclic.app/api/v1"
 
 
 export default baseurl
