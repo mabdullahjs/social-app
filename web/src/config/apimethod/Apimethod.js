@@ -1,4 +1,4 @@
-const baseurl = "http://localhost:5000/api/v1"
+const baseurl = "https://localhost:5000/api/v1"
 
 
 export default baseurl
