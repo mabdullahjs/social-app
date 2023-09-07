@@ -25,7 +25,7 @@ app.post('/api/v1/post', createPost)
 
 app.get('/api/v1/posts' , getAllPost);
 
-app.get('/api/v1/post' , getSinglePost);
+app.post('/api/v1/singlepost' , getSinglePost);
 
 
 

@@ -111,7 +111,7 @@ const getSinglePost = async (req , res) => {
             queryRequest: {
                 vector: vector,
                 // id: "vec1",
-                topK: 100,
+                topK: 3,
                 includeValues: true,
                 includeMetadata: true,
                 namespace: process.env.PINECONE_NAME_SPACE

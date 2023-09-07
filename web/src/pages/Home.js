@@ -1,63 +1,117 @@
-import React, { useEffect, useState } from 'react'
-import MAButton from '../config/components/MAButton'
-import MAInput from '../config/components/MAInput'
-import axios from 'axios'
-import baseurl from '../config/apimethod/Apimethod'
-import MACard from '../config/components/MACard'
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { TextField, InputAdornment } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import MAButton from '../config/components/MAButton';
+import MAInput from '../config/components/MAInput';
+import MACard from '../config/components/MACard';
+import baseurl from '../config/apimethod/Apimethod';
 
 const Home = () => {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [post, setPost] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [search, setSearch] = useState('');
+  const [post, setPost] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [btnLoading, setBtnLoading] = useState(false);
 
-
-  useEffect(()=>{
-    axios.get(`${baseurl}/posts` )
-    .then((res)=>{
-      console.log('res==>' , res.data);
-      setPost(res.data);
-    })
-    .catch((err)=>{
-      console.log(err);
-    })
-  } , [])
-
-  //post function
-  const postData = async (e)=>{
+  useEffect(() => {
     setLoading(true)
+
+    const getPosts = async () => {
+      try {
+        const response = await axios.get(`${baseurl}/posts`);
+        setPost(response.data);
+        setLoading(false)
+      } catch (error) {
+        console.log('error===>', error);
+        setLoading(false)
+      }
+    };
+
+    getPosts();
+  }, []);
+
+  const clearInputs = () => {
+    setTitle('');
+    setDescription('');
+  };
+
+  const postData = async (e) => {
     e.preventDefault();
-    console.log(title);
-    console.log(description);
-    await axios.post(`${baseurl}/post` , {
-      title , description
-    })
-    .then((res)=>{
-      console.log(res.data);
+    setBtnLoading(true);
+
+    try {
+      await axios.post(`${baseurl}/post`, {
+        title,
+        description,
+      });
+
+      setPost([{ metadata: { body: description, title: title } }, ...post]);
+      setBtnLoading(false);
+      clearInputs();
+    } catch (error) {
+      console.log('error===>', error);
+      setBtnLoading(false);
+    }
+  };
+
+  const searchPost = async (e) => {
+    e.preventDefault();
+    setPost([]);
+    setLoading(true)
+    try {
+      const response = await axios.post(`${baseurl}/singlepost`, {
+        search,
+      });
+
       setLoading(false)
-    })
-    .catch((err)=>{
-      console.log(err);
+      setPost(response.data);
+      setSearch('');
+    } catch (error) {
       setLoading(false)
-    })
-    setTitle('')
-    setDescription('')
-  }
+      console.log('error===>', error);
+    }
+  };
+
   return (
     <>
-    <h1 className='text-center mt-3'>Social App</h1>
-    <form onSubmit={postData} className='d-flex justify-content-center flex-column gap-4 w-25 mx-auto mt-5'>
-    <MAInput value={title} onChange={(e)=>setTitle(e.target.value)} label='Title'/>
-    <MAInput value={description} onChange={(e)=>setDescription(e.target.value)} label='Description'/>
-    <MAButton type='submit' label='Post' loading={loading}/>
-    </form>
-    {post && post.length > 0 ? post.map((item , index)=>{
-      return <div key={index}> 
-        <MACard title={item.metadata.title} description={item.metadata.body}/>
-      </div>
-    }):post ? <h5 className='text-center mt-5'>No data Found...</h5> : <h5 className='text-center mt-5'>Loading...</h5> }
-    </>
-  )
-}
+      <h1 className='text-center mt-3'>Social App</h1>
+      <form onSubmit={postData} className='d-flex justify-content-center flex-column gap-4 w-25 mx-auto mt-5'>
+        <MAInput value={title} onChange={(e) => setTitle(e.target.value)} label='Title' />
+        <MAInput value={description} onChange={(e) => setDescription(e.target.value)} label='Description' />
+        <MAButton type='submit' label='Post' loading={btnLoading} />
+      </form>
 
-export default Home
+      <div className='col-md-6 mx-auto mt-5'>
+        <form onSubmit={searchPost}>
+          <TextField
+            fullWidth
+            variant='outlined'
+            label='Search'
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position='start'>
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </form>
+      </div>
+      {post.length > 0 ? (
+        post.map((item, index) => {
+          return <div key={index}>
+            <MACard title={item.metadata?.title} description={item.metadata?.body} />
+          </div>
+        })
+      ) : (
+        <h5 className='text-center mt-5'>{loading ? 'Loading...' : 'No data Found...'}</h5>
+      )}
+    </>
+  );
+};
+
+export default Home;
