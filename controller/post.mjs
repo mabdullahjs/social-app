@@ -36,10 +36,11 @@ const createPost = async (req, res) => {
 
     const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
     // console.log(index)
+    const id = nanoid()
     const upsertRequest = {
         vectors: [
             {
-                id: nanoid(),
+                id: id,
                 values: vector,
                 metadata: {
                     title: req.body?.title,
@@ -52,8 +53,8 @@ const createPost = async (req, res) => {
 
     try {
         const upsertResponse = await index.upsert({ upsertRequest });
-        console.log('upsertResponse===>', upsertResponse);
-        res.send({ message: 'post has been created' })
+        // console.log('upsertResponse===>', upsertResponse);
+        res.send({ message: 'post has been created' , id:id })
     } catch (error) {
         console.log('error==>', error);
         res.send({ message: 'error occured' })
@@ -62,7 +63,7 @@ const createPost = async (req, res) => {
 
 
 //get all post function
-const getAllPost = async (req , res) => {
+const getAllPost = async (req, res) => {
 
     const queryText = '';
     const response = await openai.embeddings.create({
@@ -72,7 +73,7 @@ const getAllPost = async (req , res) => {
     const vector = response?.data[0]?.embedding;
 
     const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
-    try{
+    try {
         const queryResponse = await index.query({
             queryRequest: {
                 vector: vector,
@@ -84,21 +85,21 @@ const getAllPost = async (req , res) => {
             }
         });
 
-        queryResponse.matches.map((item)=>{
-            console.log(`score ${item.score.toFixed(1)} => ${JSON.stringify(item.metadata)}\n\n`);
+        queryResponse.matches.map((item) => {
+            // console.log(`score ${item.score.toFixed(1)} => ${JSON.stringify(item.metadata)}\n\n`);
         })
-        console.log(`${queryResponse.matches.length} records found `);
+        // console.log(`${queryResponse.matches.length} records found `);
         res.send(queryResponse.matches)
-    }catch(error){
+    } catch (error) {
         console.log(error)
     }
 
 }
 
 //get single post function
-const getSinglePost = async (req , res) => {
+const getSinglePost = async (req, res) => {
 
-    const queryText = req.body.search;
+    const queryText = req.params.search;
     const response = await openai.embeddings.create({
         model: "text-embedding-ada-002",
         input: queryText,
@@ -106,7 +107,7 @@ const getSinglePost = async (req , res) => {
     const vector = response?.data[0]?.embedding;
 
     const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
-    try{
+    try {
         const queryResponse = await index.query({
             queryRequest: {
                 vector: vector,
@@ -118,15 +119,71 @@ const getSinglePost = async (req , res) => {
             }
         });
 
-        queryResponse.matches.map((item)=>{
-            console.log(`score ${item.score.toFixed(1)} => ${JSON.stringify(item.metadata)}\n\n`);
+        queryResponse.matches.map((item) => {
+            // console.log(`score ${item.score.toFixed(1)} => ${JSON.stringify(item.metadata)}\n\n`);
         })
-        console.log(`${queryResponse.matches.length} records found `);
+        // console.log(`${queryResponse.matches.length} records found `);
         res.send(queryResponse.matches)
-    }catch(error){
+    } catch (error) {
         console.log(error)
     }
 
 }
 
-export { createPost, getAllPost, getSinglePost }
+//delete Post
+const deletePost = async (req, res) => {
+    try {
+        const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
+        const deleteResponse = await index.delete1({
+            ids: [req.params.id],
+            namespace: process.env.PINECONE_NAME_SPACE
+        })
+        console.log('deleteResponse===>', deleteResponse);
+        res.send({ message: 'story deleted successfully' })
+
+    } catch (error) {
+        console.log('error===>', error);
+        res.status(500).send({ message: 'Failed to delete' })
+    }
+}
+
+
+//edit post 
+const editPost = async (req, res) => {
+
+    const response = await openai.embeddings.create({
+        model: "text-embedding-ada-002",
+        input: `${req.body?.title} ${req.body?.description}`,
+    });
+    const vector = response?.data[0].embedding;
+
+    const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
+    const upsertRequest = {
+        vectors: [
+            {
+                id: req.params.id,
+                values: vector,
+                metadata: {
+                    title: req.body?.title,
+                    body: req.body?.description,
+                }
+            }
+        ],
+        namespace: process.env.PINECONE_NAME_SPACE,
+    };
+    try {
+        const upsertResponse = await index.upsert({ upsertRequest });
+        console.log("upsertResponse: ", upsertResponse);
+        res.send({
+            message: "story updated successfully"
+        });
+    } catch (e) {
+        console.log("error: ", e)
+        res.status(500).send({
+            message: "failed to create story, please try later"
+        });
+    }
+
+}
+
+export { createPost, getAllPost, getSinglePost, deletePost, editPost }

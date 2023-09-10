@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { customAlphabet } from 'nanoid';
 import dotenv from "dotenv";
-import {createPost, getAllPost, getSinglePost} from "./controller/post.mjs";
+import {createPost, deletePost, editPost, getAllPost, getSinglePost} from "./controller/post.mjs";
 
 //nano id 
 const nanoid = customAlphabet('1234567890', 20)
@@ -25,8 +25,11 @@ app.post('/api/v1/post', createPost)
 
 app.get('/api/v1/posts' , getAllPost);
 
-app.post('/api/v1/singlepost' , getSinglePost);
+app.get('/api/v1/singlepost/:search' , getSinglePost);
 
+app.put('/api/v1/updatepost/:id' , editPost);
+
+app.delete('/api/v1/deletepost/:id' , deletePost);
 
 
 
